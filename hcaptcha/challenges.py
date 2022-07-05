@@ -240,6 +240,10 @@ class Challenge:
         if data.get("pass"):
             self.token = data["generated_pass_UUID"]
             return
+
+        if data.get("success") == "false":
+            raise RequestRejected("Captcha fetch failed. Fuck you!")
+
         
         self.id = data["key"]
         self.config = data["request_config"]
