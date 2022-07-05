@@ -28,7 +28,7 @@ if is_main_process():
         <html>
         <head></head>
         <body>
-            <h1>OK</h1>
+            <img src="https://bigrat.monster/media/bigrat.png" alt="An image of a big rat sitting on a man's leg.">
             <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
             <script>{code}</script>
             <script type="text/javascript" charset="utf-8">
@@ -36,6 +36,7 @@ if is_main_process():
                 socket.on('request', async function(data) {{
                     let token = await hsw(data)
                     socket.emit('response', token)
+                    window.location.reload()
                 }})
             </script>
         </body>
