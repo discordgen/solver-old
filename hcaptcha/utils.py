@@ -8,12 +8,8 @@ def is_main_process():
     return __import__("multiprocessing").current_process().name == "MainProcess"
 
 def latest_version_id():
-    conn = HTTPSConnection("hcaptcha.com", 443)
-    conn.request("GET", "/1/api.js")
-    resp = conn.getresponse()
-    return resp.headers["location"]\
-        .split("v1/", 1)[1].split("/", 1)[0]
-
+    return '51c8a75' # because previous code didnt work
+    
 def random_widget_id():
     widget_id = "".join(random.choices(
         string.ascii_lowercase + string.digits,

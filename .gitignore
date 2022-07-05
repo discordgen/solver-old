@@ -117,3 +117,5 @@ js
 hcaptcha-js
 test.py
 example.py
+
+*.onnx

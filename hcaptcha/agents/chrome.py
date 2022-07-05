@@ -130,7 +130,8 @@ class ChromeAgent(Agent):
         self._epoch_delta += delta
 
     def epoch_wait(self):
-        time.sleep(self._epoch_delta/1000)
+        # print("Sleeping for " + str(self._epoch_delta / 1000) + " seks bcs y not")
+        # time.sleep(self._epoch_delta/1000)
         self._epoch_delta = 0
 
     def json_encode(self, data: Literal) -> str:
