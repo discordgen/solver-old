@@ -161,7 +161,7 @@ class ChromeAgent(Agent):
         headers["sec-ch-ua-platform"] = '"Windows"'
         headers.setdefault("Accept", "*/*")
         headers["Accept-Encoding"] = "gzip, deflate, br"
-        headers["Accept-Language"] = "en-US,en;q=0.9"
+        headers["Accept-Language"] = 'en-US,en;q=0.9'
 
         if body is not None:
             headers["Content-Length"] = str(len(body))

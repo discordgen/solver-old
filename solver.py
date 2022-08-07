@@ -12,64 +12,88 @@ PROJECT_ROOT = os.path.dirname(os.path.abspath("__file__"))
 DIR_MODEL = PROJECT_ROOT + "/model"
 PATH_RAINBOW = DIR_MODEL + "/rainbow.yaml"
 LABEL_ALIAS = {
-    "car": "car",
-    "seaplane": "seaplane",
-    "ѕeaplane": "seaplane",
-    "airplane": "airplane",
-    "аirplane": "airplane",
-    "motorbus": "bus",
-    "mοtorbus": "bus",
-    "bus": "bus",
-    "truck": "truck",
-    "truсk": "truck",
-    "motorcycle": "motorcycle",
-    "mοtorcycle": "motorcycle",
-    "boat": "boat",
-    "bicycle": "bicycle",
-    "train": "train",
-    "trаin": "train",
-    "vertical river": "vertical river",
-    "airplane in the sky flying left": "airplane in the sky flying left",
-    "Please select all airplanes in the sky that are flying to the rіght": "airplanes in the sky that are flying to the right",
-    "Please select all airplanes in the sky that are flying to the right": "airplanes in the sky that are flying to the right",
-    "Please select all the elephants drawn with lеaves": "elephants drawn with leaves",
-    "Please select all the elephants drawn with leaves": "elephants drawn with leaves",
+            "airplane": "airplane",
+            "motorbus": "bus",
+            "bus": "bus",
+            "truck": "truck",
+            "motorcycle": "motorcycle",
+            "boat": "boat",
+            "bicycle": "bicycle",
+            "train": "train",
+            "vertical river": "vertical river",
+            "airplane in the sky flying left": "airplane in the sky flying left",
+            "Please select all airplanes in the sky that are flying to the right": "airplanes in the sky that are flying to the right",
+            "car": "car",
+            "elephant": "elephant",
+            "bird": "bird",
+            "dog": "dog"
+}
+BAD_CODE = {
+    "а": "a",
+    "е": "e",
+    "e": "e",
+    "i": "i",
+    "і": "i",
+    "ο": "o",
+    "с": "c",
+    "ԁ": "d",
+    "ѕ": "s",
+    "һ": "h"
 }
 
+pom_handler = resnet.PluggableONNXModels(PATH_RAINBOW)
+LABEL_ALIAS.update(pom_handler.label_alias['en'])
+print(pom_handler.label_alias['en'])
+pluggable_onnx_models = pom_handler.overload(
+    DIR_MODEL, path_rainbow=PATH_RAINBOW
+)
+yolo_model = yolo.YOLO(DIR_MODEL, "yolov6s")
+
+def label_cleaning(raw_label: str) -> str:
+    clean_label = raw_label
+    for c in BAD_CODE:
+        clean_label = clean_label.replace(c, BAD_CODE[c])
+    return clean_label
 
 def split_prompt_message(prompt_message: str) -> str:
+    prompt_message = label_cleaning(prompt_message)
     labels_mirror = {
-        "en": re.split(r"containing a", prompt_message)[-1][1:].strip()
+        "en": re.split(r"containing a", prompt_message)[-1][1:].strip().replace(".", "")
         if "containing" in prompt_message
         else prompt_message,
     }
     return labels_mirror["en"]
 
+def switch_solution(label):
+    """Optimizing solutions based on different challenge labels"""
+    sk_solution = {
+        "vertical river": sk_recognition.VerticalRiverRecognition,
+        "airplane in the sky flying left": sk_recognition.LeftPlaneRecognition,
+        "airplanes in the sky that are flying to the right": sk_recognition.RightPlaneRecognition,
+    }
 
-def switch_solution(label, onnx_prefix="yolov6s"):
-    label = LABEL_ALIAS[label]
-    if label in ["seaplane"]:
-        return resnet.ResNetSeaplane(DIR_MODEL)
-    if label in ["elephants drawn with leaves"]:
-        return resnet.ElephantsDrawnWithLeaves(DIR_MODEL, path_rainbow=PATH_RAINBOW)
-    if label in ["vertical river"]:
-        return sk_recognition.VerticalRiverRecognition(path_rainbow=PATH_RAINBOW)
-    if label in ["airplane in the sky flying left"]:
-        return sk_recognition.LeftPlaneRecognition(path_rainbow=PATH_RAINBOW)
-    if label in ["airplanes in the sky that are flying to the right"]:
-        return sk_recognition.RightPlaneRecognition(path_rainbow=PATH_RAINBOW)
-    if label in ["horses drawn with flowers"]:
-        return resnet.HorsesDrawnWithFlowers(DIR_MODEL, path_rainbow=PATH_RAINBOW)
-    return yolo.YOLOWithAugmentation(label, DIR_MODEL, onnx_prefix, path_rainbow=PATH_RAINBOW)
+    label_alias = LABEL_ALIAS.get(label)
 
+    # Select ResNet ONNX model
+    if pluggable_onnx_models.get(label_alias):
+        return pluggable_onnx_models[label_alias]
+    # Select SK-Image method
+    if sk_solution.get(label_alias):
+        return sk_solution[label_alias](PATH_RAINBOW)
+    # Select YOLO ONNX model
+    return yolo_model
 
 def solveAI(prompt, tile) -> bool:
     label = split_prompt_message(prompt)
-    label = LABEL_ALIAS[label]
-    print("Here's a cool query: " + label)
     solution = switch_solution(label)
     solution.download_model()
     return solution.solution(img_stream=tile.get_image(raw=True), label=label)
+
+def solveAIS(label, stream) -> bool:
+    print("Here's a cool query: " + label)
+    solution = switch_solution(label)
+    solution.download_model()
+    return solution.solution(img_stream=stream, label=label)
 
 
 async def fetch(session, ch, tile):
