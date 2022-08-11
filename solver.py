@@ -11,6 +11,7 @@ from .hcaptcha import Challenge
 PROJECT_ROOT = os.path.dirname(os.path.abspath("__file__"))
 DIR_MODEL = PROJECT_ROOT + "/model"
 PATH_RAINBOW = DIR_MODEL + "/rainbow.yaml"
+PATH_MODELS = DIR_MODEL + "/objects.yaml"
 LABEL_ALIAS = {
             "airplane": "airplane",
             "motorbus": "bus",
@@ -41,7 +42,7 @@ BAD_CODE = {
     "һ": "h"
 }
 
-pom_handler = resnet.PluggableONNXModels(PATH_RAINBOW)
+pom_handler = resnet.PluggableONNXModels(PATH_MODELS)
 LABEL_ALIAS.update(pom_handler.label_alias['en'])
 print(pom_handler.label_alias['en'])
 pluggable_onnx_models = pom_handler.overload(
@@ -112,11 +113,12 @@ async def fetch_all(session, ch):
     await asyncio.gather(*tasks)
 
 
-async def solve(**args):
+async def solve(solve=True, **args):
     ch = Challenge(**args)
     async with aiohttp.ClientSession() as session:
         t1 = time.time()
-        await fetch_all(session, ch)
+        if solve:
+            await fetch_all(session, ch)
         print("solve took " + str(time.time() - t1))
         t1 = time.time()
         token = ch.submit()
